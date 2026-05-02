@@ -1,0 +1,16 @@
+RewriteEngine On
+RewriteBase /reporte/
+
+# Si el archivo existe físicamente, no hagas nada
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Si el usuario escribe /login, cargar login.php internamente
+RewriteRule ^login$ login.php [L]
+RewriteRule ^index$ index.php [L]
+RewriteRule ^registro_produccion$ registro_produccion.php [L]
+
+# Regla general para cualquier otro archivo .php
+RewriteCond %{REQUEST_FILENAME}\.php -f
+RewriteRule ^([^/]+)$ $1.php [L]
