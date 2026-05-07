@@ -52,7 +52,7 @@
             <div class="small" style="color: rgba(255,255,255,0.6); font-size: 1rem; margin-bottom: 5px;">
                 Sesión iniciada como:
             </div>
-            <div class="fw-bold text-info" style="font-size: 1.5rem; letter-spacing: 0.5px;">
+            <div class="fw-bold text-info" style="font-size: 1.0rem; letter-spacing: 0.5px;">
                 <i class="fas fa-user-circle me-2"></i>
                 <?php 
                     echo isset($_SESSION['empresa_nombre']) ? $_SESSION['empresa_nombre'] : "Invitado"; 

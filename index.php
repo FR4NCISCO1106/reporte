@@ -12,42 +12,72 @@ include("conexion.php");
 $id_sesion = $_SESSION['empresa_id'];
 $nombre_sesion = $_SESSION['empresa_nombre'];
 
+// --- CONFIGURACIÓN DE PAGINACIÓN ---
+$registros_por_pagina = 10;
+$pagina_actual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+if ($pagina_actual < 1) $pagina_actual = 1;
+$inicio_limit = ($pagina_actual - 1) * $registros_por_pagina;
+
 // Capturar filtros
 $filtro_empresa = isset($_GET['empresa_id']) ? (int)$_GET['empresa_id'] : null;
 $fecha_inicio = isset($_GET['fecha_inicio']) && !empty($_GET['fecha_inicio']) ? $_GET['fecha_inicio'] : null;
 $fecha_fin = isset($_GET['fecha_fin']) && !empty($_GET['fecha_fin']) ? $_GET['fecha_fin'] : null;
 
-// Condición de fecha para las consultas[cite: 2]
+// Condición de fecha para las consultas
 $condicion_fecha = "";
 if ($fecha_inicio && $fecha_fin) {
     $condicion_fecha = " AND p.fecha_produccion BETWEEN '$fecha_inicio' AND '$fecha_fin'";
 }
 
+// Condición de filtro de empresa para los KPIs y Tabla
+$id_filtro_kpi = $filtro_empresa ?: null;
+$condicion_kpi = $id_filtro_kpi ? "WHERE p.empresa_id = $id_filtro_kpi" : "WHERE 1=1";
+
+// --- FÓRMULA DE CONVERSIÓN DINÁMICA (Basada en tu requerimiento) ---
+// Esta fórmula extrae el número de 'nombre_medida' y lo convierte a TM
+$formula_conversion = "CASE 
+    WHEN p.nombre_medida LIKE '%kg' THEN (p.cantidad_unidades * CAST(REPLACE(REPLACE(p.nombre_medida, 'kg', ''), 'Kg', '') AS DECIMAL(10,2))) / 1000
+    WHEN p.nombre_medida LIKE '%g'  THEN (p.cantidad_unidades * CAST(REPLACE(p.nombre_medida, 'g', '') AS DECIMAL(10,2))) / 1000000
+    WHEN p.nombre_medida LIKE '%lts' THEN (p.cantidad_unidades * CAST(REPLACE(p.nombre_medida, 'lts', '') AS DECIMAL(10,2))) / 1000
+    WHEN p.nombre_medida LIKE '%ml'  THEN (p.cantidad_unidades * CAST(REPLACE(p.nombre_medida, 'ml', '') AS DECIMAL(10,2))) / 1000000
+    ELSE p.toneladas_producidas 
+END";
+
+// --- CONSULTA PARA CONTAR TOTAL DE REGISTROS ---
+$total_res = mysqli_query($conexion, "SELECT COUNT(*) as total FROM produccion p $condicion_kpi $condicion_fecha");
+$total_row = mysqli_fetch_assoc($total_res);
+$total_registros = $total_row['total'];
+$total_paginas = ceil($total_registros / $registros_por_pagina);
+
 // --- LÓGICA DE CONTADORES (KPIs) ---
-$tm_query = mysqli_query($conexion, "SELECT SUM(toneladas_producidas) as total FROM produccion p WHERE empresa_id = $id_sesion $condicion_fecha");
+$tm_query = mysqli_query($conexion, "SELECT SUM($formula_conversion) as total FROM produccion p $condicion_kpi $condicion_fecha");
 $tm_data = mysqli_fetch_assoc($tm_query);
 $total_tm = $tm_data['total'] ?? 0;
 
-$unidades_query = mysqli_query($conexion, "SELECT SUM(cantidad_unidades) as total FROM produccion p WHERE empresa_id = $id_sesion $condicion_fecha");
+$unidades_query = mysqli_query($conexion, "SELECT SUM(cantidad_unidades) as total FROM produccion p $condicion_kpi $condicion_fecha");
 $unidades_data = mysqli_fetch_assoc($unidades_query);
 $total_unidades = $unidades_data['total'] ?? 0;
 
-$variedad_query = mysqli_query($conexion, "SELECT COUNT(id) as total FROM productos WHERE empresa_id = $id_sesion");
+$variedad_query = mysqli_query($conexion, "SELECT COUNT(DISTINCT producto_id) as total FROM produccion p $condicion_kpi $condicion_fecha");
 $variedad_data = mysqli_fetch_assoc($variedad_query);
 $total_variedad = $variedad_data['total'] ?? 0;
 
-$total_empresas_global = mysqli_num_rows(mysqli_query($conexion, "SELECT id FROM empresas"));
+$activas_query = mysqli_query($conexion, "SELECT SUM(unidades_activas) as total FROM produccion p $condicion_kpi $condicion_fecha");
+$activas_data = mysqli_fetch_assoc($activas_query);
+$total_activas = $activas_data['total'] ?? 0;
 
-// --- LÓGICA DEL GRÁFICO (Muestra todas las empresas) ---
+$inactivas_query = mysqli_query($conexion, "SELECT SUM(unidades_inactivas) as total FROM produccion p $condicion_kpi $condicion_fecha");
+$inactivas_data = mysqli_fetch_assoc($inactivas_query);
+$total_inactivas = $inactivas_data['total'] ?? 0;
+
+// --- LÓGICA DEL GRÁFICO ---
 $nombres_graf = [];
 $totales_graf = [];
-
-$sql_graf = "SELECT e.nombre, SUM(p.toneladas_producidas) as total 
-              FROM empresas e 
-              LEFT JOIN produccion p ON e.id = p.empresa_id $condicion_fecha 
-              " . ($filtro_empresa ? "WHERE e.id = $filtro_empresa" : "") . " 
-              GROUP BY e.id";
-
+$sql_graf = "SELECT e.nombre, SUM($formula_conversion) as total 
+                FROM empresas e 
+                LEFT JOIN produccion p ON e.id = p.empresa_id $condicion_fecha 
+                " . ($filtro_empresa ? "WHERE e.id = $filtro_empresa" : "") . " 
+                GROUP BY e.id";
 $graf_res = mysqli_query($conexion, $sql_graf);
 while($g = mysqli_fetch_assoc($graf_res)){
     $nombres_graf[] = $g['nombre'];
@@ -58,7 +88,6 @@ include("includes/header.php");
 include("includes/sidebar.php"); 
 ?>
 
-<!-- LIBRERÍAS DE CALENDARIO MODERNO[cite: 2] -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
 
@@ -76,27 +105,30 @@ include("includes/sidebar.php");
     .kpi-label { color: #8e8e93; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
     .btn-pill { border-radius: 30px !important; padding: 10px 20px; font-weight: 600; background: white; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s; }
     .btn-pill:hover { background: #eee; }
-    .flatpickr-input { background-color: #f8f9fa !important; border: 1px solid #eee !important; padding: 12px 20px !important; border-radius: 15px !important; }
 
-    .flatpickr-input { 
-        background-color: #f8f9fa !important; 
-        border: 1px solid #dee2e6 !important; 
-        padding: 12px 20px !important; 
-        border-radius: 15px !important; 
-        color: #1a1a1a !important; 
-        font-weight: 600 !important;
-    }
+    .pagination .page-link { border: none; color: var(--skillset-dark); border-radius: 10px; margin: 0 3px; font-weight: 600; }
+    .pagination .page-item.active .page-link { background-color: var(--skillset-dark); color: white; }
 
-    .flatpickr-input::placeholder {
-        color: #6c757d !important; 
-        opacity: 1; 
-    }
+#fecha_inicio, #fecha_fin {
+    color: #1a1a1a !important;
+    background-color: #ffffff !important;
+    border: 2px solid #dbdada !important;
+    border-radius: 30px !important; 
+    padding: 12px 20px !important; 
+    transition: all 0.9s ease;
+    height: auto; 
+}
+
+#fecha_inicio:focus, #fecha_fin:focus {
+    border-color: #191919 !important;
+    box-shadow: 0 0 10px rgba(51, 102, 255, 0.15);
+    outline: none;
+}
 </style>
 
 <div id="layoutSidenav_content">
     <main>
         <div class="container-fluid px-5">
-            <!-- HEADER -->
             <div class="d-flex justify-content-between align-items-center mt-5 mb-5">
                 <div>
                     <h2 class="fw-bold text-dark mb-1" style="letter-spacing: -1.5px;">REPORTE DE PRODUCCIÓN SEMANAL</h2>
@@ -118,7 +150,10 @@ include("includes/sidebar.php");
                             <?php
                             $el = mysqli_query($conexion, "SELECT * FROM empresas");
                             while($e = mysqli_fetch_assoc($el)) {
-                                echo "<li><a class='dropdown-item' href='index.php?empresa_id={$e['id']}'>{$e['nombre']}</a></li>";
+                                $url = "index.php?empresa_id={$e['id']}";
+                                if ($fecha_inicio) $url .= "&fecha_inicio=$fecha_inicio";
+                                if ($fecha_fin) $url .= "&fecha_fin=$fecha_fin";
+                                echo "<li><a class='dropdown-item' href='$url'>{$e['nombre']}</a></li>";
                             }
                             ?>
                         </ul>
@@ -126,35 +161,39 @@ include("includes/sidebar.php");
                 </div>
             </div>
 
-            <!-- KPIs -->
             <div class="row mb-4">
-                <div class="col-xl-3 col-md-6 mb-4">
+                <div class="col-xl col-md-6 mb-4">
                     <div class="card kpi-dark">
                         <div class="kpi-label">Total TM. Producidas</div>
-                        <div class="kpi-value"><?php echo number_format($total_tm, 2, ',', '.'); ?></div>
+                        <div class="kpi-value"><?php echo number_format($total_tm, 3, ',', '.'); ?></div>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6 mb-4">
+                <div class="col-xl col-md-6 mb-4">
                     <div class="card bg-white">
                         <div class="kpi-label">Unidades Producidas</div>
                         <div class="kpi-value"><?php echo number_format($total_unidades, 0, ',', '.'); ?></div>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6 mb-4">
+                <div class="col-xl col-md-6 mb-4">
                     <div class="card bg-white">
                         <div class="kpi-label">Variedad Productos</div>
                         <div class="kpi-value"><?php echo $total_variedad; ?></div>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6 mb-4">
+                <div class="col-xl col-md-6 mb-4">
                     <div class="card bg-white">
-                        <div class="kpi-label">Empresas</div>
-                        <div class="kpi-value"><?php echo $total_empresas_global; ?></div>
+                        <div class="kpi-label text-success">Prod. Activa</div>
+                        <div class="kpi-value"><?php echo number_format($total_activas, 0, ',', '.'); ?></div>
+                    </div>
+                </div>
+                <div class="col-xl col-md-6 mb-4">
+                    <div class="card bg-white">
+                        <div class="kpi-label text-danger">Prod. Inactiva</div>
+                        <div class="kpi-value"><?php echo number_format($total_inactivas, 0, ',', '.'); ?></div>
                     </div>
                 </div>
             </div>
 
-            <!-- GRÁFICO -->
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card p-4">
@@ -166,8 +205,7 @@ include("includes/sidebar.php");
                 </div>
             </div>
 
-            <!-- TABLA -->
-            <div class="card mb-5 shadow-sm overflow-hidden">
+            <div class="card mb-3 shadow-sm overflow-hidden">
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table align-middle mb-0">
@@ -183,20 +221,24 @@ include("includes/sidebar.php");
                             </thead>
                             <tbody>
                                 <?php
-                                $id_para_tabla = $filtro_empresa ? $filtro_empresa : $id_sesion;
-                                $query_t = mysqli_query($conexion, "SELECT p.*, e.nombre as empresa, pr.nombre_producto 
+                                // Aplicamos la fórmula también en el listado de la tabla
+                                $sql_tabla = "SELECT p.*, e.nombre as empresa, pr.nombre_producto,
+                                              ($formula_conversion) as toneladas_reales
                                     FROM produccion p 
                                     INNER JOIN empresas e ON p.empresa_id = e.id 
                                     INNER JOIN productos pr ON p.producto_id = pr.id 
-                                    WHERE p.empresa_id = $id_para_tabla $condicion_fecha 
-                                    ORDER BY p.fecha_produccion DESC LIMIT 10");
+                                    $condicion_kpi $condicion_fecha 
+                                    ORDER BY p.fecha_produccion DESC, p.id DESC 
+                                    LIMIT $inicio_limit, $registros_por_pagina";
+
+                                $query_t = mysqli_query($conexion, $sql_tabla);
                                 while($row = mysqli_fetch_assoc($query_t)): ?>
                                     <tr>
                                         <td class="ps-4 text-muted small"><?php echo date('d M, Y', strtotime($row['fecha_produccion'])); ?></td>
                                         <td class="fw-bold"><?php echo $row['empresa']; ?></td>
                                         <td><?php echo $row['nombre_producto']; ?></td>
                                         <td><?php echo number_format($row['cantidad_unidades'], 0, ',', '.'); ?></td>
-                                        <td class="fw-bold text-primary"><?php echo number_format($row['toneladas_producidas'], 3, ',', '.'); ?> TM</td>
+                                        <td class="fw-bold text-primary"><?php echo number_format($row['toneladas_reales'], 3, ',', '.'); ?> TM</td>
                                         <td class="text-end pe-4"><span class="badge bg-light text-dark border-0 py-2 px-3" style="border-radius: 10px;">Procesado</span></td>
                                     </tr>
                                 <?php endwhile; ?>
@@ -205,31 +247,52 @@ include("includes/sidebar.php");
                     </div>
                 </div>
             </div>
+
+            <nav class="mb-5 mt-4">
+                <ul class="pagination justify-content-center">
+                    <?php if($pagina_actual > 1): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="index.php?pagina=<?php echo $pagina_actual-1; ?><?php echo $filtro_empresa ? "&empresa_id=$filtro_empresa" : ""; ?><?php echo $fecha_inicio ? "&fecha_inicio=$fecha_inicio&fecha_fin=$fecha_fin" : ""; ?>">Anterior</a>
+                        </li>
+                    <?php endif; ?>
+
+                    <?php for($i=1; $i<=$total_paginas; $i++): ?>
+                        <li class="page-item <?php echo ($i == $pagina_actual) ? 'active' : ''; ?>">
+                            <a class="page-link" href="index.php?pagina=<?php echo $i; ?><?php echo $filtro_empresa ? "&empresa_id=$filtro_empresa" : ""; ?><?php echo $fecha_inicio ? "&fecha_inicio=$fecha_inicio&fecha_fin=$fecha_fin" : ""; ?>"><?php echo $i; ?></a>
+                        </li>
+                    <?php endfor; ?>
+
+                    <?php if($pagina_actual < $total_paginas): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="index.php?pagina=<?php echo $pagina_actual+1; ?><?php echo $filtro_empresa ? "&empresa_id=$filtro_empresa" : ""; ?><?php echo $fecha_inicio ? "&fecha_inicio=$fecha_inicio&fecha_fin=$fecha_fin" : ""; ?>">Siguiente</a>
+                        </li>
+                    <?php endif; ?>
+                </ul>
+            </nav>
         </div>
     </main>
-
-    <!-- FOOTER CORREGIDO[cite: 1] -->
-    <?php include("includes/footer.php"); ?>
 </div>
 
-<!-- MODAL DE FECHAS MEJORADO[cite: 2] -->
 <div class="modal fade" id="modalFecha" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow" style="border-radius: 20px;">
       <form action="index.php" method="GET">
+        <?php if($filtro_empresa): ?>
+            <input type="hidden" name="empresa_id" value="<?php echo $filtro_empresa; ?>">
+        <?php endif; ?>
+
         <div class="modal-body p-4">
             <h5 class="fw-bold mb-4">Filtrar por Periodo</h5>
             <div class="row mb-4">
                 <div class="col-6">
                     <label class="small fw-bold text-muted mb-2 d-block">Desde</label>
-                    <input type="text" name="fecha_inicio" id="fecha_inicio" class="form-control" placeholder="Seleccionar" required>
+                    <input type="text" name="fecha_inicio" id="fecha_inicio" class="form-control" placeholder="Seleccionar" value="<?php echo $fecha_inicio; ?>" required>
                 </div>
                 <div class="col-6">
                     <label class="small fw-bold text-muted mb-2 d-block">Hasta</label>
-                    <input type="text" name="fecha_fin" id="fecha_fin" class="form-control" placeholder="Seleccionar" required>
+                    <input type="text" name="fecha_fin" id="fecha_fin" class="form-control" placeholder="Seleccionar" value="<?php echo $fecha_fin; ?>" required>
                 </div>
             </div>
-            <!-- BOTONES AL LADO[cite: 2] -->
             <div class="d-flex gap-2">
                 <a href="index.php" class="btn btn-light w-50 rounded-pill py-2 fw-bold text-dark text-decoration-none text-center">Limpiar</a>
                 <button type="submit" class="btn btn-dark w-50 rounded-pill py-2 fw-bold">Filtrar</button>
@@ -245,7 +308,6 @@ include("includes/sidebar.php");
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 
 <script>
-    // Configuración Flatpickr en español[cite: 2]
     flatpickr("#fecha_inicio", { locale: "es", dateFormat: "Y-m-d" });
     flatpickr("#fecha_fin", { locale: "es", dateFormat: "Y-m-d" });
 
@@ -273,3 +335,4 @@ include("includes/sidebar.php");
         }
     });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
