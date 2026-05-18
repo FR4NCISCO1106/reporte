@@ -13,7 +13,7 @@
             position: relative;
             z-index: 1;
             transition: color 0.4s ease;
-            background: linear-gradient(to right, rgba(248, 41, 41, 0.15) 50%, transparent 50%);
+            background: linear-gradient(to right, rgba(255, 255, 255, 0.22) 50%, transparent 50%);
             background-size: 200% 100%;
             background-position: right bottom;
             border-radius: 0 50px 50px 0; /* Bordes redondeados a la derecha */
@@ -32,11 +32,11 @@
 
         /* Nueva clase personalizada para el texto e icono del usuario en el footer */
         .text-custom-footer {
-            color: #cddfff !important; /* Color rojo suave para contraste sobre fondo oscuro */
+            color: #cddfff !important; 
         }
     </style>
 
-    <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion" style="background-color: #000052; background-size: cover; background-position: center;">
+    <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion" style="background-color: #000022; background-size: cover; background-position: center;">
         <div class="sb-sidenav-menu">
             <div class="nav">
                 <div class="sb-sidenav-menu-heading" style="color: rgb(255, 255, 255);">PRINCIPAL</div>
@@ -53,7 +53,7 @@
             </div>
         </div>
         
-        <div class="sb-sidenav-footer" style="background-color: rgba(0,0,0,0.5); border-top: 1px solid rgba(255,255,255,0.1); padding: 35px;">
+        <div class="sb-sidenav-footer" style="background-color: #000022; border-top: 1px solid rgba(255,255,255,0.1); padding: 35px;">
             <div class="small" style="color: rgb(255, 255, 255); font-size: 1rem; margin-bottom: 5px;">
                 Sesión iniciada como:
             </div>

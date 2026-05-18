@@ -11,7 +11,7 @@
         <style>
             /* Aplicamos el fondo al header con un overlay oscuro */
             .sb-topnav.navbar {
-                background-color: #000052 !important;
+                background-color: #000022 !important;
                 background-size: cover;
                 background-position: center;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.1);

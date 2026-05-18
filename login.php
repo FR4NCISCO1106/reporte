@@ -37,7 +37,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         body { 
-            background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('img/fondo2.jpg'); 
+            background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('img/fondo.jpg'); 
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -62,7 +62,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             font-weight: 700; 
             /* AJUSTE: Título más grande */
             font-size: 1.8rem; 
-            color: var(--dark-skillset); 
+            color: #031d44;; 
             margin-bottom: 20px;
         }
 
@@ -75,7 +75,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         .btn-primary { 
-            background-color: var(--dark-skillset) !important; 
+            background-color: #031d44 !important; 
             border: none !important; 
             border-radius: 30px !important; 
             padding: 15px !important; 
@@ -86,7 +86,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 5px 15px #04395e;
         }
 
         .logo-text { 
@@ -101,7 +101,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <!-- AJUSTE DE ANCHO: Cambiado de col-lg-4 a col-lg-5 -->
             <div class="col-lg-5 col-md-8">
                 <div class="text-center">
-                    <div class="logo-text"><span class="text-info">☻</span></div>
+                    <div class="logo-text"><span class="text-info">.</span></div>
                 </div>
                 <div class="card">
                     <div class="card-header text-center">Inicio de sesión</div>

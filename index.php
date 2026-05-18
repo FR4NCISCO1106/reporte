@@ -95,7 +95,7 @@ include("includes/sidebar.php");
     :root { 
         --skillset-bg: #f3f3f3; 
         --skillset-card-radius: 24px;
-        --skillset-dark: #970005;
+        --skillset-dark: #5a0002;
         --skillset-blue: #3366ff;
     }
     #layoutSidenav_content { background-color: var(--skillset-bg); }
@@ -128,6 +128,39 @@ include("includes/sidebar.php");
     box-shadow: 0 0 10px rgba(51, 102, 255, 0.15);
     outline: none;
 }
+
+/* Asegura que el contenedor de la tabla no deje sobresalir las esquinas rectas */
+.table-responsive {
+    border-radius: 24px 24px 0 0; /* Ajusta el radio superior igual al de tus tarjetas */
+    overflow: hidden;
+}
+
+/* Estilos de la cinta del encabezado */
+.cinti {
+    background-color: #5a000242;
+    color: #5a0002;
+}
+
+/* Aplica el redondeado específicamente a las esquinas superiores de la tabla */
+.table thead tr:first-child th:first-child {
+    border-top-left-radius: 24px;
+}
+.table thead tr:first-child th:last-child {
+    border-top-right-radius: 24px;
+}
+
+/* Añade esto dentro de tus etiquetas <style> */
+.table tbody td.text-primary {
+    color: #000022 !important;
+}
+
+.card h6.fw-bold {
+    color: #000022 !important; 
+}
+
+.text-muted.small strong {
+    color: #000022 !important; 
+}
 </style>
 
 <div id="layoutSidenav_content">
@@ -135,8 +168,8 @@ include("includes/sidebar.php");
         <div class="container-fluid px-5">
             <div class="d-flex justify-content-between align-items-center mt-5 mb-5">
                 <div>
-                    <h2 class="fw-bold text-dark mb-1" style="letter-spacing: -1.5px;">REPORTE DE PRODUCCIÓN SEMANAL</h2>
-                    <p class="text-muted small mb-0">Bienvenido, <strong><?php echo $nombre_sesion; ?></strong></p>
+                    <h2 class="fw-bold mb-1" style="letter-spacing: -1.5px; color: #000022;">REPORTE DE PRODUCCIÓN SEMANAL</h2>
+                    <p class="text-muted small mb-0" >Bienvenido, <strong><?php echo $nombre_sesion; ?></strong></p>
                 </div>
                 <div class="d-flex gap-3">
                     <button type="button" class="btn btn-pill text-dark" data-bs-toggle="modal" data-bs-target="#modalFecha">
@@ -209,8 +242,8 @@ include("includes/sidebar.php");
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table align-middle mb-0">
-                            <thead class="bg-light">
-                                <tr class="text-muted small fw-bold">
+                            <thead class="cinti">
+                                <tr class="cinti">
                                     <th class="ps-4 py-3">FECHA</th>
                                     <th class="py-3">EMPRESA</th>
                                     <th class="py-3">PRODUCTO</th>
@@ -222,7 +255,7 @@ include("includes/sidebar.php");
                             <tbody>
                                 <?php
                                 $sql_tabla = "SELECT p.*, e.nombre as empresa, pr.nombre_producto,
-                                              ($formula_conversion) as toneladas_reales
+                                            ($formula_conversion) as toneladas_reales
                                     FROM produccion p 
                                     INNER JOIN empresas e ON p.empresa_id = e.id 
                                     INNER JOIN productos pr ON p.producto_id = pr.id 
@@ -318,7 +351,7 @@ include("includes/sidebar.php");
             datasets: [{ 
                 label: 'Toneladas', 
                 data: <?php echo json_encode($totales_graf); ?>, 
-                backgroundColor: '#1a1a1a', 
+                backgroundColor: '#5a0002', 
                 borderRadius: 12, 
                 barThickness: <?php echo (count($nombres_graf) > 1) ? 50 : 100; ?> 
             }]
