@@ -11,7 +11,7 @@
         <style>
             /* Aplicamos el fondo al header con un overlay oscuro */
             .sb-topnav.navbar {
-                background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url('img/fondo2.jpg') !important;
+                background-color: #000052 !important;
                 background-size: cover;
                 background-position: center;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -27,7 +27,7 @@
             }
 
             #btnNavbarSearch {
-                background-color: #0dcaf0 !important; /* Color info */
+                background-color: #0c44ac !important; /* Color info */
                 border: none;
             }
 
@@ -41,19 +41,26 @@
             .form-control::placeholder {
                 color: rgba(255, 255, 255, 0.5) !important;
             }
+
+            /* Cambio de color para el icono de usuario en el menú superior */
+            .navbar-nav .nav-link #navbarDropdown, 
+            .navbar-nav .nav-link .fa-user {
+                color: #ffffff !important; /* Cambiado de azul a blanco */
+                transition: color 0.3s ease;
+            }
+            .navbar-nav .nav-link:hover .fa-user {
+                color: #717d95 !important; /* Color rojo al pasar el cursor */
+            }
         </style>
     </head>
     <body class="sb-nav-fixed">
         <nav class="sb-topnav navbar navbar-expand navbar-dark">
-            <!-- Navbar Brand-->
             <a class="navbar-brand ps-3" href="index.php">
                 Reporte de producción <span class="text-info"></span>
             </a>
-            <!-- Sidebar Toggle-->
             <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!">
                 <i class="fas fa-bars"></i>
             </button>
-            <!-- Navbar Search-->
             <form class="d-none d-md-inline-block form-inline ms-auto me-0 me-md-3 my-2 my-md-0">
                 <div class="input-group">
                     <input class="form-control" type="text" placeholder="Buscar..." aria-label="Search for..." aria-describedby="btnNavbarSearch" />
@@ -62,11 +69,10 @@
                     </button>
                 </div>
             </form>
-            <!-- Navbar-->
             <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-user fa-fw text-info"></i>
+                        <i class="fas fa-user fa-fw"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="navbarDropdown" style="border-radius: 12px; margin-top: 10px;">
                         <li><a class="dropdown-item" href="#!">Configuración</a></li>

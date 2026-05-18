@@ -33,13 +33,13 @@ if ($fecha_inicio && $fecha_fin) {
 $id_filtro_kpi = $filtro_empresa ?: null;
 $condicion_kpi = $id_filtro_kpi ? "WHERE p.empresa_id = $id_filtro_kpi" : "WHERE 1=1";
 
-// --- FÓRMULA DE CONVERSIÓN DINÁMICA (Basada en tu requerimiento) ---
-// Esta fórmula extrae el número de 'nombre_medida' y lo convierte a TM
+// --- FÓRMULA DE CONVERSIÓN DINÁMICA (CORREGIDA) ---
+// Se agregó el REPLACE faltante para evitar el error de sintaxis en MariaDB
 $formula_conversion = "CASE 
     WHEN p.nombre_medida LIKE '%kg' THEN (p.cantidad_unidades * CAST(REPLACE(REPLACE(p.nombre_medida, 'kg', ''), 'Kg', '') AS DECIMAL(10,2))) / 1000
-    WHEN p.nombre_medida LIKE '%g'  THEN (p.cantidad_unidades * CAST(REPLACE(p.nombre_medida, 'g', '') AS DECIMAL(10,2))) / 1000000
-    WHEN p.nombre_medida LIKE '%lts' THEN (p.cantidad_unidades * CAST(REPLACE(p.nombre_medida, 'lts', '') AS DECIMAL(10,2))) / 1000
-    WHEN p.nombre_medida LIKE '%ml'  THEN (p.cantidad_unidades * CAST(REPLACE(p.nombre_medida, 'ml', '') AS DECIMAL(10,2))) / 1000000
+    WHEN p.nombre_medida LIKE '%g'  THEN (p.cantidad_unidades * CAST(REPLACE(REPLACE(p.nombre_medida, 'g', ''), 'G', '') AS DECIMAL(10,2))) / 1000000
+    WHEN p.nombre_medida LIKE '%lts' THEN (p.cantidad_unidades * CAST(REPLACE(REPLACE(p.nombre_medida, 'lts', ''), 'Lts', '') AS DECIMAL(10,2))) / 1000
+    WHEN p.nombre_medida LIKE '%ml'  THEN (p.cantidad_unidades * CAST(REPLACE(REPLACE(p.nombre_medida, 'ml', ''), 'Ml', '') AS DECIMAL(10,2))) / 1000000
     ELSE p.toneladas_producidas 
 END";
 
@@ -95,16 +95,20 @@ include("includes/sidebar.php");
     :root { 
         --skillset-bg: #f3f3f3; 
         --skillset-card-radius: 24px;
-        --skillset-dark: #1a1a1a;
+        --skillset-dark: #970005;
         --skillset-blue: #3366ff;
     }
     #layoutSidenav_content { background-color: var(--skillset-bg); }
     .card { border-radius: var(--skillset-card-radius) !important; border: none !important; box-shadow: 0 4px 20px rgba(0,0,0,0.03); padding: 1.5rem; min-height: 140px; display: flex; flex-direction: column; justify-content: center; }
     .kpi-dark { background-color: var(--skillset-dark); color: white; }
+    
+    /* Asegura que las etiquetas y valores mantengan el color blanco en las tarjetas rojas */
+    .kpi-dark .kpi-label, .kpi-dark .kpi-value { color: white !important; }
+
     .kpi-value { font-size: 1.8rem; font-weight: 700; margin-top: 5px; letter-spacing: -1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .kpi-label { color: #8e8e93; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-    .btn-pill { border-radius: 30px !important; padding: 10px 20px; font-weight: 600; background: white; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s; }
-    .btn-pill:hover { background: #eee; }
+    .kpi-label { color: #fefefe; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .btn-pill { border-radius: 30px !important; padding: 10px 20px; font-weight: 600; background: white; border: none; box-shadow: 0 4px 12px rgba(15, 119, 230, 0.05); transition: 0.3s; }
+    .btn-pill:hover { background: #eeeeee; }
 
     .pagination .page-link { border: none; color: var(--skillset-dark); border-radius: 10px; margin: 0 3px; font-weight: 600; }
     .pagination .page-item.active .page-link { background-color: var(--skillset-dark); color: white; }
@@ -169,26 +173,22 @@ include("includes/sidebar.php");
                     </div>
                 </div>
                 <div class="col-xl col-md-6 mb-4">
-                    <div class="card bg-white">
-                        <div class="kpi-label">Unidades Producidas</div>
+                    <div class="card kpi-dark"> <div class="kpi-label">Unidades Producidas</div>
                         <div class="kpi-value"><?php echo number_format($total_unidades, 0, ',', '.'); ?></div>
                     </div>
                 </div>
                 <div class="col-xl col-md-6 mb-4">
-                    <div class="card bg-white">
-                        <div class="kpi-label">Variedad Productos</div>
+                    <div class="card kpi-dark"> <div class="kpi-label">Variedad Productos</div>
                         <div class="kpi-value"><?php echo $total_variedad; ?></div>
                     </div>
                 </div>
                 <div class="col-xl col-md-6 mb-4">
-                    <div class="card bg-white">
-                        <div class="kpi-label text-success">Prod. Activa</div>
+                    <div class="card kpi-dark"> <div class="kpi-label">Prod. Activa</div>
                         <div class="kpi-value"><?php echo number_format($total_activas, 0, ',', '.'); ?></div>
                     </div>
                 </div>
                 <div class="col-xl col-md-6 mb-4">
-                    <div class="card bg-white">
-                        <div class="kpi-label text-danger">Prod. Inactiva</div>
+                    <div class="card kpi-dark"> <div class="kpi-label">Prod. Inactiva</div>
                         <div class="kpi-value"><?php echo number_format($total_inactivas, 0, ',', '.'); ?></div>
                     </div>
                 </div>
@@ -221,7 +221,6 @@ include("includes/sidebar.php");
                             </thead>
                             <tbody>
                                 <?php
-                                // Aplicamos la fórmula también en el listado de la tabla
                                 $sql_tabla = "SELECT p.*, e.nombre as empresa, pr.nombre_producto,
                                               ($formula_conversion) as toneladas_reales
                                     FROM produccion p 
