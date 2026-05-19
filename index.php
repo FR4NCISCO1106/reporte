@@ -100,10 +100,25 @@ include("includes/sidebar.php");
     }
     #layoutSidenav_content { background-color: var(--skillset-bg); }
     .card { border-radius: var(--skillset-card-radius) !important; border: none !important; box-shadow: 0 4px 20px rgba(0,0,0,0.03); padding: 1.5rem; min-height: 140px; display: flex; flex-direction: column; justify-content: center; }
-    .kpi-dark { background-color: var(--skillset-dark); color: white; }
+
     
-    /* Asegura que las etiquetas y valores mantengan el color blanco en las tarjetas rojas */
-    .kpi-dark .kpi-label, .kpi-dark .kpi-value { color: white !important; }
+.kpi-dark { 
+    background: linear-gradient(135deg, #4a0002 0%, #b80005 100%); 
+    color: white; 
+    /* Esta sombra le da volumen en el fondo gris de tu app */
+    box-shadow: 0 6px 15px rgba(90, 0, 2, 0.15) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.kpi-dark:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 25px rgba(90, 0, 2, 0.3) !important;
+}
+
+/* Asegura que las etiquetas y valores mantengan el color blanco en las tarjetas */
+.kpi-dark .kpi-label, .kpi-dark .kpi-value { 
+    color: white !important; 
+}
 
     .kpi-value { font-size: 1.8rem; font-weight: 700; margin-top: 5px; letter-spacing: -1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .kpi-label { color: #fefefe; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -351,7 +366,7 @@ include("includes/sidebar.php");
             datasets: [{ 
                 label: 'Toneladas', 
                 data: <?php echo json_encode($totales_graf); ?>, 
-                backgroundColor: '#5a0002', 
+                backgroundColor: '#0c44ac', 
                 borderRadius: 12, 
                 barThickness: <?php echo (count($nombres_graf) > 1) ? 50 : 100; ?> 
             }]
